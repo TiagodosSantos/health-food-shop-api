@@ -1,6 +1,9 @@
 package com.smartest.store.controller.form;
 
-import javax.validation.constraints.NotEmpty;
+
+import javax.validation.constraints.NotBlank;
+
+import org.hibernate.validator.constraints.Length;
 
 import com.smartest.store.model.Product;
 import com.smartest.store.repository.ProductRepository;
@@ -15,9 +18,11 @@ import com.smartest.store.repository.ProductRepository;
  */
 public class ProductForm {
 	
-	@NotEmpty
+	@NotBlank(message = "Title is mandatory")
+	@Length(min = 2, message = "Min title lenght is 2")
 	private String title;
-	@NotEmpty
+	@NotBlank(message = "Type is mandatory")
+	@Length(min = 3, message = "Min type lenght is 3")
 	private String type;
 	private String description;
 	private String filename;
@@ -101,6 +106,8 @@ public class ProductForm {
 		product.setWidth(width);
 		product.setPrice(price);
 		product.setRating(rating);
+		
+		productRepository.flush();
 		
 		return product;
 	}

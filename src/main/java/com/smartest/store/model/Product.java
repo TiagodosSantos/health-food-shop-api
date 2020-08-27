@@ -6,7 +6,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
+
+import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.smartest.store.utils.DateUtils;
@@ -26,9 +28,9 @@ public class Product {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	//@JsonIgnore
 	private Integer id;
-	@NotEmpty
+	@NotBlank @Length(min = 2)
 	private String title;
-	@NotEmpty
+	@NotBlank @Length(min = 3)
 	private String type;
 	private String description;
 	private String filename;

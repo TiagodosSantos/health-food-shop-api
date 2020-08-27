@@ -10,7 +10,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.validation.constraints.NotBlank;
 
+import org.hibernate.validator.constraints.Length;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -21,8 +23,11 @@ public class User implements UserDetails {
 	
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	@NotBlank @Length(min = 2)
 	private String name;
+	@NotBlank @Length(min = 5)
 	private String email;
+	@NotBlank @Length(min = 3)
 	private String password;
 	
 	@ManyToMany(fetch = FetchType.EAGER)

@@ -4,13 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
-import javax.validation.Valid;
+import javax.validation.constraints.Min;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.smartest.store.controller.form.ProductForm;
+import com.smartest.store.exception.ResourceNotFoundException;
 import com.smartest.store.model.Product;
 import com.smartest.store.repository.ProductRepository;
 
@@ -42,6 +44,7 @@ import io.swagger.annotations.ApiResponses;
 @Api(value="Products", tags = {"Operations to handle products"})
 @RestController
 @RequestMapping(value = "/products")
+@Validated
 public class ProductController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
@@ -76,6 +79,7 @@ public class ProductController {
 	   * This is  method find a specific product by id
 	   * 
 	   * @return product 
+	 * @throws Exception 
 	   * @exception Exception on general errors and not found.
 	   * @see Product
 	   */
@@ -84,7 +88,7 @@ public class ProductController {
 			@ApiResponse(code = 500, message = "Internal Server Error"),
 			@ApiResponse(code = 404, message = "Product not found")})
 	@GetMapping("/{id}")
-	public ResponseEntity<Product> findByProductId(@PathVariable Integer id) {
+	public ResponseEntity<Product> findByProductId(@PathVariable @Min(1) Integer id) throws Exception {
 		
 		logger.info("Start");
 		
@@ -95,7 +99,8 @@ public class ProductController {
 		if (product.isPresent()) 
 			response = ResponseEntity.ok(product.get());
 		else
-			response = ResponseEntity.notFound().build();
+			//response = ResponseEntity.notFound().build();
+			throw new ResourceNotFoundException("Produto não encontrado");
 		
 		logger.info("End");	
 		return response;
@@ -107,6 +112,7 @@ public class ProductController {
 	   * @param id identification of the product that needs to be updated.
 	   * @param productForm product data that needs to be updated
 	   * @return Product updated if no exception is thrown.
+	 * @throws Exception 
 	   * @exception Exception on general errors.
 	   * @see Product
 	   */
@@ -116,20 +122,29 @@ public class ProductController {
 		@ApiResponse(code = 404, message = "Product not found")})
 	@PutMapping("/{id}")
 	@Transactional 
-	public ResponseEntity<Product> update(@PathVariable Integer id, @ApiParam(value = "productForm") @Valid @RequestBody ProductForm productForm, UriComponentsBuilder uriBuilder) {
+	public ResponseEntity<Product> update(@PathVariable @Min(1) Integer id,
+			@ApiParam(value = "productForm") /* @Valid */ @RequestBody ProductForm productForm, UriComponentsBuilder uriBuilder) throws Exception {
 		
 		logger.info("Start");
 		
 		Optional<Product> optional = productRepository.findById(id);
 		ResponseEntity<Product> response = null;
-		if (optional.isPresent()) {
-			Product productToUpdate = productForm.update(id, productRepository);
-			response = ResponseEntity.ok(productToUpdate);
-			logger.info("ProductToUpdate -> " + productToUpdate);
-		} else {
-			response = ResponseEntity.notFound().build();
-			logger.info("Product not found. ProductID -> " + id);
-		}
+		
+			if (optional.isPresent()) {
+				try {
+					Product productToUpdate = productForm.update(id, productRepository);
+					response = ResponseEntity.ok(productToUpdate);
+					logger.info("ProductToUpdate -> " + productToUpdate);
+				}catch(Exception e) {
+					logger.error("Erro while updating product -> " + e.getCause());
+					throw e; 
+				}
+			} else {
+				//response = ResponseEntity.notFound().build();
+				logger.info("Product not found. ProductID -> " + id);
+				throw new ResourceNotFoundException("Produto não encontrado");
+			}
+		
 		
 		logger.info("End");
 		return response;
@@ -142,6 +157,7 @@ public class ProductController {
 	   * 
 	   * @param idProduct an integer that represents the product id.
 	   * @return ResponseEntity code.
+	 * @throws Exception 
 	   * @exception Exception on general errors.
 	   */
 	@DeleteMapping("/{idProduct}")
@@ -150,7 +166,7 @@ public class ProductController {
 		@ApiResponse(code = 500, message = "Internal Server Error"),
 		@ApiResponse(code = 404, message = "Product not found")})
 	@Transactional
-	public ResponseEntity<?> remove(@PathVariable("idProduct") Integer idProduct) {
+	public ResponseEntity<?> remove(@PathVariable("idProduct") @Min(1) Integer idProduct) throws Exception {
 		logger.info("Start");
 		
 		Optional<Product> optional = productRepository.findById(idProduct);
@@ -161,8 +177,9 @@ public class ProductController {
 			response = ResponseEntity.ok().build();
 			logger.info("ProductDeleted  -> "+optional);
 		}else {
-			response = ResponseEntity.notFound().build();
+			//response = ResponseEntity.notFound().build();
 			logger.info("ProductId "+idProduct+" not found");
+			throw new ResourceNotFoundException("Produto não encontrado");
 		}
 		
 		logger.info("End");

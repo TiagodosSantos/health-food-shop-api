@@ -36,13 +36,6 @@ public class ExceptionHandlerController {
 			final HttpServletRequest request) {
 		return new ExceptionDetails(exception.getMessage(), request.getRequestURI());
 	}
-
-	@ExceptionHandler(Exception.class)
-	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-	public @ResponseBody ExceptionDetails handleException(final Exception exception,
-			final HttpServletRequest request) {
-		return new ExceptionDetails(exception.getMessage(), request.getRequestURI());
-	}
 	
 	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,12 +45,23 @@ public class ExceptionHandlerController {
 		
 		List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
 		fieldErrors.forEach(e -> {
-			String message = messageSource.getMessage(e, LocaleContextHolder.getLocale());
+			String field = e.getField();
+            Object value = e.getRejectedValue();
+            String msg = e.getDefaultMessage();
+            String message = String.format("Error field:%s，Error value:%s，Reason:%s；", field, value, msg);
+			//String message = messageSource.getMessage(e, LocaleContextHolder.getLocale());
 			ExceptionDetails erro = new ExceptionDetails(message, e.getField(), null);
 			listError.add(erro);
 		});
 		
 		return listError;
+	}
+	
+	@ExceptionHandler(Exception.class)
+	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+	public @ResponseBody ExceptionDetails handleException(final Exception exception,
+			final HttpServletRequest request) {
+		return new ExceptionDetails(exception.getMessage(), request.getRequestURI());
 	}
 
 }
